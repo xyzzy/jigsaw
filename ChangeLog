@@ -1,6 +1,9 @@
 
                 ChangeLog file for jigsaw (most recent changes first)
 
+Changes in 1.1.1 (9 august 2017)
+- Fixed loading of wordlist
+
 Changes in 1.1.0 (9 august 2017)
 - Ansify and code cleanup
 - Improved timer usage

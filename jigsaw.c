@@ -91,7 +91,6 @@ struct link {
 uint8_t wordbase[WORDMAX][WORDLENMAX];			// Converted wordlist
 int wlen[WORDMAX];					// Length of words
 int numword;						// How many
-char *wordfname = "wordlist";				// Where are they found
 
 // Where are 1,2,3 long character combinations
 int16_t links1[32];					// 1-char wordlist
@@ -845,9 +844,9 @@ void load_words(char *fname) {
 
 	// Open file and load the words and check if they are valid
 	if (fname) {
-		f = fopen(wordfname, "r");
+		f = fopen(fname, "r");
 		if (!f) {
-			fprintf(stderr, "Cannot open %s\n", wordfname);
+			fprintf(stderr, "Cannot open %s\n", fname);
 			exit(1);
 		}
 	} else {
@@ -926,7 +925,7 @@ void load_words(char *fname) {
 		fprintf(stderr, "%s Found %d links\n", elapsedstr(), numlinkdat);
 }
 
-void usage(char * const * argv)
+void usage(char ** argv)
 {
         fprintf(stderr,"usage: %s [<wordlist>]\n", argv[0]);
 	fprintf(stderr,"\t-h\thelp\n");

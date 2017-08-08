@@ -1,4 +1,4 @@
-AC_INIT([jigsaw], [1.1.0])
+AC_INIT([jigsaw], [1.1.1])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_AUX_DIR([m4])
 AC_CONFIG_MACRO_DIRS([m4])
