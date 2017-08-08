@@ -1,0 +1,152 @@
+
+                                 C R O Z Z L E
+
+Simple: Make a crossword puzzle from a word list.
+
+I'll provide a list of words in a file.  you will work on a blank
+20x20 square grid.  Your program will try to link together as many
+words as possible from the wordlist in "crossword-puzzle" fashion.
+If you can manage to create the most "complex" crossword using the
+words I provide, you may just win this POTM!
+
+===========  THE DETAILS - SINCE YOU ASKED ========================
+
+Welcome to the first 1996 POTM ... deadline midnight on 4/1/96 !!!
+   ** items were added via the FAQ following the initial version
+
+I.   WHAT DOES YOUR PROGRAM HAVE TO DO?
+        Your program must take a pathname as an argument, read the
+        file that is referenced to get a list of up to 200 words,
+        and use some of these words to create a crossword puzzle
+        no larger than 20x20.
+
+II.  TELL ME MORE ABOUT THE WORD LIST
+        o The wordlist will be contained in a file whose pathname
+                will be used as the argument to your entry
+        o The wordlist file will contain one word per line
+        o each word will be provided in lower case letters (a-z)
+        o there will be no special characters (like ' or - or
+                whitespace) in any of the words ... strictly a-z
+        o words will be at least two letters long and there will
+                be no words longer than 20 letters long
+        o there will be more than 100 words and less than 201 words
+                in the wordlist
+        o the words will not be ordered in any particular way
+        o the words may or may not be "real" words
+        o the words for the final test will be chosen from a page
+                of a randomly selected book from my immense library
+                just prior to the contest deadline
+      **o there will be no identically duplicated entries in the list
+
+III. WHAT EXACTLY DOES "crossword-puzzle fashion" MEAN?
+        o the output grid will be 20x20 - you may distribute words
+                within the full grid or you may choose to use
+                fewer than 20 rows or columns.  If you choose a
+                smaller grid, you must still show output for all
+                rows and columns (see IV below).
+        o all words in the grid must be "connected" to one another:
+                there must be a horizontal and vertical path of
+                letters connecting any two letters in the grid.
+        o all words in the grid must be from the provided wordlist
+                referenced by the pathname in the argument
+        o no words may be used more than once in the grid
+        o embedded words (like "and" in "random") will not count
+                as separate words for purposes of scoring should
+                both appear on the wordlist.  Should this occur,
+                they MAY be used at DIFFERENT places in the grid.
+        o all letter sequences of two or more letters appearing
+                horizontally or vertically in the grid MUST form
+                words that are in the wordlist
+      **o words must read from left to right or top to bottom
+      **o words must be separated by at least one empty square.
+                That is, if "one" and "two" are in the wordlist, this
+                does NOT imply that the six letter "onetwo" may appear
+                in the grid.
+        o in short - your output should look like the solution
+                to a crossword puzzle - with the exception that
+                it does not need to be symmetrical in any way.
+
+IV.  THE SCORING - HOW TO WIN!
+
+    The input to your program will be provided in a file whose
+     pathname is contained in the argument to the executable.
+     This pathname is the only required argument - and your
+     program must run if a single argument is provided.  Your
+     program should not look to stdin for input.
+
+    The output of your program will be to standard output and
+     must create output of exactly 420 characters (20 lines of
+     20 characters plus a newline on each line).  Your output
+     should contain only lower case letters (a through z) and
+     should use a hyphen (dash, minus, "-") to represent the
+     blank spaces in your crossword grid.  For example:
+
+     incredible----------       line 1 .... 20 characters per line
+     ---e-e--------------       line 2            plus a newline
+     ---dive-------------
+     -----i---p----------
+     -----o---o----------
+     -----u---t----------       the wordlist may contain non-words
+     -----scrambled------        (like potm, or xyzzy, or sfortz)
+     -------------a------
+     -------------n------
+     -------------d------
+     -------potatoe------       The wordlist may contain incorrectly
+     --------u----l------        spelled words - or non-English words
+     ----hawaii---i------        or names (non-capitalized)
+     -------------of-----
+     -------------nine---
+     --------------n-----       all 20 rows and columns must be output
+     --------------a-----        even if they are not used
+     ----------equalized-
+     --------------------
+     --------------------       line 20
+
+     Of course - ONLY words contained in the provided wordlist may
+     appear in your grid, and words may not appear more than once
+     in the crossword grid.
+
+** Each program will be run three times for the final runs ... all programs
+** will use the same three wordlists and the outputs of each run will
+** be evaluated according to the following scores (which will be summed
+** over the three different wordlists used for the final runs):
+
+    First Score:  The number of words from the wordlist that
+      appear in the grid your program outputs - high is good.
+        In the event of entries tieing on this score, we use:
+
+    Second Score:  The number of "connectors" in the grid.
+      a connector letter is a letter that is used in two words.
+      For example, the "i" that links "final" and "nine" in the
+      grid above.  There are 15 connectors in the sample grid.
+      Again - high is good ... thus rewarding intricate solutions.
+        In the event of entries tieing on this score, we use:
+
+    Third Score:  The number of filled in squares - those squares
+      out of the 400 that contain letters in your final solution.
+      High is good ... rewarding the use of longer words - but its
+      always better to use two short words rather than one long one!
+        In the event of entries tieing on this score, we use:
+
+    Final Tiebreaker will be the execution time as measured by
+         timex time taken on the final test.
+        Fast is good .... long is bad.  10 minutes
+        time as measured on MY box is the limit!  Programs
+        running longer than 10.5 minutes will be disqualified.
+
+
+
+V.  READ THE Frequently Asked Questions (FAQ) list distributed every
+     week ... it often contains corrections to this problem statement!
+
+VI.  While the ideas for this puzzle go back 6 years (when we tried
+        solving them without computers), I was reminded of this puzzle
+        when I ran across a web page in Australia.  The page is from
+        Gary Capell and talks about a puzzle called "crozzle" that
+        appears in an Australian magazine "Women's Weekly".  Gary has
+        given me permission to reference his web page (thanks Gary!):
+            http://www.cs.su.oz.au/~gary/hobby/crozzle.html
+        While you're at it, here's a reminder about the POTM pages:
+            http://potm.ffast.att.com/   if you're INSIDE AT&T
+            http://www.cs.washington.edu/homes/corin/POTM.PAGES/  USofA
+            http://www.strath.ac.uk/Students/WebSoc/POTM/  for Europe
