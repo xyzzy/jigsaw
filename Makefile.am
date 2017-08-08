@@ -3,5 +3,4 @@ EXTRA_DIST = ChangeLog APPROACH.md DESCRIPTION.txt LICENSE.txt README.md worldne
 
 bin_PROGRAMS = jigsaw
 
-jigsaw_CPPFLAGS = --std=c90
 jigsaw_SOURCES = jigsaw.c

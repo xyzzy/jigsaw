@@ -12,6 +12,26 @@ It was the winner of the 1996 spring POTM (Programmer Of The Month) contest.
 * [plato.list](plato.list) - wordlist. One of the dialogues of Plato: Timaeus. This particular dialogue contains the first known reference to the lost continent of Atlantis.
 * [german.list](german.list) - wordlist. a list of mathematical resources on the web ... mostly in German (which I sought out for it's tendancy to long words).
 
+## Usage
+```console
+usage: jigsaw [<wordlist>]
+        -h      help
+        -s      symmetrical
+        -t int  TIMEMAX
+        -n int  NODEMAX
+
+Load words from <wordlist> or stdin if not specified.
+
+  -h
+      Show this text and default values
+  -s
+      Create a horizontal/vertical symmetrical crossword
+  -t int
+      Maximum cpu time in seconds
+  -n int
+      Maximum number of nodes per round
+```
+
 ## Known bugs
 
 - Grid size is hardcoded to 20x20
