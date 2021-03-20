@@ -12,6 +12,7 @@ Todo:
 ## [Unreleased]
 
 ```
+2021-03-19 00:49:38 Changed: Support rectangular grids.
 2021-03-19 00:35:11 Added: `moonwalk` theme.
 ```
 

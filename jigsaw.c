@@ -34,7 +34,8 @@ int opt_dump;						// 0=No 1=after every round 2=after every addNode
 int opt_timemax = (10*60-15);				// 10 minute limit
 int opt_nodemax = 15000;				// 500=Fast 1500=Normal
 
-#define GRIDMAX		22				// Size of grid incl. border
+#define GRIDXMAX	(20+2)				// Size of grid incl. border
+#define GRIDYMAX	(20+2)				// Size of grid incl. border
 #define LINKMAX		4096				// # links
 #define WORDMAX		256				// # words
 #define WORDLENMAX	32				// # length of word
@@ -76,8 +77,8 @@ struct node {
 	int8_t		adjdir[ADJMAX];			// Pair's direction
 	int16_t		adjxy[ADJMAX];			// Pair's location
 	int16_t		adjl[ADJMAX];			// Pair's wordlist
-	uint8_t		grid[GRIDMAX * GRIDMAX];	// *THE* grid
-	uint8_t		attr[GRIDMAX * GRIDMAX];	// Grid hints
+	uint8_t		grid[GRIDXMAX * GRIDYMAX];	// *THE* grid
+	uint8_t		attr[GRIDXMAX * GRIDYMAX];	// Grid hints
 };
 
 struct link {
@@ -100,8 +101,8 @@ struct link linkdat[LINKMAX];				// Body above wordlist
 int numlinkdat;						// How many
 
 // Hotspot pre-calculations
-int16_t xy2level[GRIDMAX * GRIDMAX];			// distance 0,0 to x,y
-int16_t level2xy[GRIDMAX * 2];				// inverse
+int16_t xy2level[GRIDXMAX * GRIDYMAX];			// distance 0,0 to x,y
+int16_t level2xy[GRIDXMAX + GRIDYMAX + 1];		// inverse
 
 // Node administration
 struct node *freenode;					// Don't malloc() too much
@@ -147,10 +148,10 @@ void dump_grid(struct node *d) {
 	if (opt_debug == 2) {
 		// Double check the number of words
 		cnt = 0;
-		for (x = GRIDMAX * GRIDMAX - 1; x >= 0; x--)
+		for (x = GRIDXMAX * GRIDYMAX - 1; x >= 0; x--)
 			if (ISCHAR(d->grid[x])) {
 				if (!ISCHAR(d->grid[x - 1]) && ISCHAR(d->grid[x + 1])) cnt++;
-				if (!ISCHAR(d->grid[x - GRIDMAX]) && ISCHAR(d->grid[x + GRIDMAX])) cnt++;
+				if (!ISCHAR(d->grid[x - GRIDXMAX]) && ISCHAR(d->grid[x + GRIDXMAX])) cnt++;
 			}
 		printf("%s seqnr:%d level:%d/%d score:%f numword:%d/%d numchar:%d numconn:%d\n",
 		       elapsedstr(), d->seqnr, d->firstlevel, d->lastlevel, d->score, d->numword,
@@ -159,9 +160,9 @@ void dump_grid(struct node *d) {
 
 	if (opt_debug == 2) {
 		// Show grid as I would like to see it
-		for (y = 0; y < GRIDMAX; y++) {
-			for (x = 0; x < GRIDMAX; x++) {
-				attr = d->attr[x + y * GRIDMAX] & (TODOH | TODOV);
+		for (y = 0; y < GRIDYMAX; y++) {
+			for (x = 0; x < GRIDXMAX; x++) {
+				attr = d->attr[x + y * GRIDXMAX] & (TODOH | TODOV);
 				if (attr == (TODOH | TODOV))
 					printf("B");
 				else if (attr == TODOH)
@@ -172,23 +173,23 @@ void dump_grid(struct node *d) {
 					printf(".");
 			}
 			printf(" ");
-			for (x = 0; x < GRIDMAX; x++)
-				if (ISSTAR(d->grid[x + y * GRIDMAX]))
+			for (x = 0; x < GRIDXMAX; x++)
+				if (ISSTAR(d->grid[x + y * GRIDXMAX]))
 					printf("*");
-				else if (ISFREE(d->grid[x + y * GRIDMAX]))
+				else if (ISFREE(d->grid[x + y * GRIDXMAX]))
 					printf(".");
-				else if (ISCHAR(d->grid[x + y * GRIDMAX]))
-					printf("%c", d->grid[x + y * GRIDMAX] + BASE);
+				else if (ISCHAR(d->grid[x + y * GRIDXMAX]))
+					printf("%c", d->grid[x + y * GRIDXMAX] + BASE);
 				else
-					printf("0x%02x", d->grid[x + y * GRIDMAX]);
+					printf("0x%02x", d->grid[x + y * GRIDXMAX]);
 			printf("\n");
 		}
 	} else {
 		// Show grid as Fred would like to see it
-		for (y = 1; y < GRIDMAX - 1; y++) {
-			for (x = 1; x < GRIDMAX - 1; x++)
-				if (ISCHAR(d->grid[x + y * GRIDMAX]))
-					printf("%c", d->grid[x + y * GRIDMAX] + BASE);
+		for (y = 1; y < GRIDYMAX - 1; y++) {
+			for (x = 1; x < GRIDXMAX - 1; x++)
+				if (ISCHAR(d->grid[x + y * GRIDXMAX]))
+					printf("%c", d->grid[x + y * GRIDXMAX] + BASE);
 				else
 					printf("-");
 			printf("\n");
@@ -272,7 +273,7 @@ void add_node(struct node *d) {
 
 /*
  * The next two routines test if a given word can be placed in the grid.
- * If a new character will be adjecent to an existing character, check
+ * If a new character will be adjacent to an existing character, check
  * if the newly formed character pair exist in the wordlist (it doesn't
  * matter where).
  */
@@ -282,13 +283,14 @@ int test_hword(struct node *d, int xybase, int word) {
 	int l;
 
 	// Some basic tests
-	if (xybase < 0 || xybase + wlen[word] >= GRIDMAX * GRIDMAX + 1) return 0;
+	if (xybase < 0 || xybase + wlen[word] >= GRIDXMAX * GRIDYMAX)
+		return 0;
 
 	if (opt_symmetrical) {
 		// How about star's
-		if (ISCHAR(d->grid[GRIDMAX * GRIDMAX - 1 - xybase]))
+		if (ISCHAR(d->grid[GRIDXMAX * GRIDYMAX - 1 - xybase]))
 			return 0;
-		if (ISCHAR(d->grid[GRIDMAX * GRIDMAX - 1 - (xybase + wlen[word] - 1)]))
+		if (ISCHAR(d->grid[GRIDXMAX * GRIDYMAX - 1 - (xybase + wlen[word] - 1)]))
 			return 0;
 	}
 
@@ -300,15 +302,15 @@ int test_hword(struct node *d, int xybase, int word) {
 			return 0; // Char placement conflict
 		if (ISSTAR(*p))
 			continue; // Skip stars
-		if (!ISCHAR(grid[-GRIDMAX]) && !ISCHAR(grid[+GRIDMAX]))
-			continue; // No adjecent chars
+		if (!ISCHAR(grid[-GRIDXMAX]) && !ISCHAR(grid[+GRIDXMAX]))
+			continue; // No adjacent chars
 
-		if (ISFREE(grid[-GRIDMAX]))
-			l = links2[*p][grid[+GRIDMAX]];
-		else if (ISFREE(grid[+GRIDMAX]))
-			l = links2[grid[-GRIDMAX]][*p];
+		if (!ISCHAR(grid[-GRIDXMAX]))
+			l = links2[*p][grid[+GRIDXMAX]];
+		else if (!ISCHAR(grid[+GRIDXMAX]))
+			l = links2[grid[-GRIDXMAX]][*p];
 		else
-			l = links3[grid[-GRIDMAX]][*p][grid[+GRIDMAX]];
+			l = links3[grid[-GRIDXMAX]][*p][grid[+GRIDXMAX]];
 		if (l == 0)
 			return 0;
 	}
@@ -322,18 +324,19 @@ int test_vword(struct node *d, int xybase, int word) {
 	int l;
 
 	// Some basic tests
-	if (xybase < 0 || xybase + wlen[word] * GRIDMAX >= GRIDMAX * GRIDMAX + GRIDMAX) return 0;
+	if (xybase < 0 || xybase + wlen[word] * GRIDXMAX >= GRIDXMAX * GRIDYMAX)
+		return 0;
 
 	if (opt_symmetrical) {
 		// How about star's
-		if (ISCHAR(d->grid[GRIDMAX * GRIDMAX - 1 - xybase]))
+		if (ISCHAR(d->grid[GRIDXMAX * GRIDYMAX - 1 - xybase]))
 			return 0;
-		if (ISCHAR(d->grid[GRIDMAX * GRIDMAX - 1 - (xybase + wlen[word] * GRIDMAX - GRIDMAX)]))
+		if (ISCHAR(d->grid[GRIDXMAX * GRIDYMAX - 1 - (xybase + wlen[word] * GRIDXMAX - GRIDXMAX)]))
 			return 0;
 	}
 
 	// Will new characters create conflicts
-	for (grid = d->grid + xybase, p = wordbase[word]; *p; grid += GRIDMAX, p++) {
+	for (grid = d->grid + xybase, p = wordbase[word]; *p; grid += GRIDXMAX, p++) {
 		if (*grid == *p)
 			continue; // Char already there
 		if (!ISFREE(*grid))
@@ -341,11 +344,11 @@ int test_vword(struct node *d, int xybase, int word) {
 		if (ISSTAR(*p))
 			continue; // Skip stars
 		if (!ISCHAR(grid[-1]) && !ISCHAR(grid[+1]))
-			continue; // No adjecent characters
+			continue; // No adjacent characters
 
-		if (ISFREE(grid[-1]))
+		if (!ISCHAR(grid[-1]))
 			l = links2[*p][grid[+1]];
-		else if (ISFREE(grid[+1]))
+		else if (!ISCHAR(grid[+1]))
 			l = links2[grid[-1]][*p];
 		else
 			l = links3[grid[-1]][*p][grid[+1]];
@@ -361,11 +364,11 @@ int test_vword(struct node *d, int xybase, int word) {
 /*
  * The next two routines will place a given word in the grid. These routines
  * also performs several sanity checks to make sure the new grid is worth
- * it to continue with. If a newly placed character is adjecent to an
+ * it to continue with. If a newly placed character is adjacent to an
  * existing character, then that pair must be part of a word that can
  * be physically placed. If multiple character pairs exist, then no check
  * is done to determine if those words (of which the pairs are part) can
- * be adjecent. That is done later as these grids are not counted against
+ * be adjacent. That is done later as these grids are not counted against
  * NODEMAX.
  */
 
@@ -378,13 +381,13 @@ int place_hword(struct node *data, int xybase, int word) {
 
 	// Can word be placed
 	if (INSET(d->words, word)) return 0;
-	if (xybase < 0 || xybase + wlen[word] >= GRIDMAX * GRIDMAX + 1) return 0;
+	if (xybase < 0 || xybase + wlen[word] >= GRIDXMAX * GRIDYMAX + 1) return 0;
 
 	if (opt_symmetrical) {
 		// How about star's
-		if (ISCHAR(d->grid[GRIDMAX * GRIDMAX - 1 - xybase]))
+		if (ISCHAR(d->grid[GRIDXMAX * GRIDYMAX - 1 - xybase]))
 			return 0;
-		if (ISCHAR(d->grid[GRIDMAX * GRIDMAX - 1 - (xybase + wlen[word] - 1)]))
+		if (ISCHAR(d->grid[GRIDXMAX * GRIDYMAX - 1 - (xybase + wlen[word] - 1)]))
 			return 0;
 	}
 
@@ -397,18 +400,18 @@ int place_hword(struct node *data, int xybase, int word) {
 			return 0; // Char placement conflict
 		if (ISSTAR(*p))
 			continue; // Skip stars
-		if (!ISCHAR(grid[-GRIDMAX]) && !ISCHAR(grid[+GRIDMAX]))
-			continue; // No adjecent chars
+		if (!ISCHAR(grid[-GRIDXMAX]) && !ISCHAR(grid[+GRIDXMAX]))
+			continue; // No adjacent chars
 
-		if (ISFREE(grid[-GRIDMAX])) {
+		if (ISFREE(grid[-GRIDXMAX])) {
 			d->adjxy[newnumadj] = xy;
-			d->adjl[newnumadj] = links2[*p][grid[+GRIDMAX]];
-		} else if (ISFREE(grid[+GRIDMAX])) {
-			d->adjxy[newnumadj] = xy - GRIDMAX;
-			d->adjl[newnumadj] = links2[grid[-GRIDMAX]][*p];
+			d->adjl[newnumadj] = links2[*p][grid[+GRIDXMAX]];
+		} else if (ISFREE(grid[+GRIDXMAX])) {
+			d->adjxy[newnumadj] = xy - GRIDXMAX;
+			d->adjl[newnumadj] = links2[grid[-GRIDXMAX]][*p];
 		} else {
-			d->adjxy[newnumadj] = xy - GRIDMAX;
-			d->adjl[newnumadj] = links3[grid[-GRIDMAX]][*p][grid[+GRIDMAX]];
+			d->adjxy[newnumadj] = xy - GRIDXMAX;
+			d->adjl[newnumadj] = links3[grid[-GRIDXMAX]][*p][grid[+GRIDXMAX]];
 		}
 		if (d->adjl[newnumadj] == 0 || newnumadj == ADJMAX - 1)
 			return 0;
@@ -419,7 +422,7 @@ int place_hword(struct node *data, int xybase, int word) {
 	for (i = d->numadj; i < newnumadj; i++) {
 		for (l = d->adjl[i]; l; l = ld->next) {
 			ld = &linkdat[l];
-			if (test_vword(d, d->adjxy[i] + ld->ofs * GRIDMAX, ld->w))
+			if (test_vword(d, d->adjxy[i] + ld->ofs * GRIDXMAX, ld->w))
 				break;
 		}
 		if (l == 0) return 0;
@@ -469,7 +472,7 @@ int place_hword(struct node *data, int xybase, int word) {
 		// Don't forget the symmetry
 		if (d->symdir == 0) {
 			d->symdir = 'H';
-			d->symxy = GRIDMAX * GRIDMAX - 1 - (xybase + wlen[word] - 1);
+			d->symxy = GRIDXMAX * GRIDYMAX - 1 - (xybase + wlen[word] - 1);
 			d->symlen = wlen[word];
 		} else
 			d->symdir = 0;
@@ -489,19 +492,19 @@ int place_vword(struct node *data, int xybase, int word) {
 
 	// Some basic tests
 	if (INSET(d->words, word)) return 0;
-	if (xybase < 0 || xybase + wlen[word] * GRIDMAX >= GRIDMAX * GRIDMAX + GRIDMAX) return 0;
+	if (xybase < 0 || xybase + wlen[word] * GRIDXMAX >= GRIDXMAX * GRIDYMAX + GRIDXMAX) return 0;
 
 	if (opt_symmetrical) {
 		// How about star's
-		if (ISCHAR(d->grid[GRIDMAX * GRIDMAX - 1 - xybase]))
+		if (ISCHAR(d->grid[GRIDXMAX * GRIDYMAX - 1 - xybase]))
 			return 0;
-		if (ISCHAR(d->grid[GRIDMAX * GRIDMAX - 1 - (xybase + wlen[word] * GRIDMAX - GRIDMAX)]))
+		if (ISCHAR(d->grid[GRIDXMAX * GRIDYMAX - 1 - (xybase + wlen[word] * GRIDXMAX - GRIDXMAX)]))
 			return 0;
 	}
 
 	// Check character environment
 	newnumadj = d->numadj;
-	for (xy = xybase, grid = d->grid + xy, p = wordbase[word]; *p; grid += GRIDMAX, xy += GRIDMAX, p++) {
+	for (xy = xybase, grid = d->grid + xy, p = wordbase[word]; *p; grid += GRIDXMAX, xy += GRIDXMAX, p++) {
 		if (*grid == *p)
 			continue; // Char already there
 		if (!ISFREE(*grid))
@@ -509,7 +512,7 @@ int place_vword(struct node *data, int xybase, int word) {
 		if (ISSTAR(*p))
 			continue; // Skip stars
 		if (!ISCHAR(grid[-1]) && !ISCHAR(grid[+1]))
-			continue; // No adjecent chars
+			continue; // No adjacent chars
 
 		if (ISFREE(grid[-1])) {
 			d->adjxy[newnumadj] = xy;
@@ -547,7 +550,7 @@ int place_vword(struct node *data, int xybase, int word) {
 	d->numadj = newnumadj;
 	for (xy = xybase, grid = d->grid + xy, attr = d->attr + xy, p = wordbase[word];
 	     *p;
-	     grid += GRIDMAX, attr += GRIDMAX, xy += GRIDMAX, p++) {
+	     grid += GRIDXMAX, attr += GRIDXMAX, xy += GRIDXMAX, p++) {
 		if (!ISSTAR(*p)) {
 			*attr &= ~TODOV;
 
@@ -573,14 +576,14 @@ int place_vword(struct node *data, int xybase, int word) {
 	}
 
 	// Update hotspot
-	if (xy2level[xy - GRIDMAX] > d->lastlevel)
-		d->lastlevel = xy2level[xy - GRIDMAX];
+	if (xy2level[xy - GRIDXMAX] > d->lastlevel)
+		d->lastlevel = xy2level[xy - GRIDXMAX];
 
 	if (opt_symmetrical) {
 		// Don't forget the symmetry
 		if (d->symdir == 0) {
 			d->symdir = 'V';
-			d->symxy = GRIDMAX * GRIDMAX - 1 - (xybase + wlen[word] * GRIDMAX - GRIDMAX);
+			d->symxy = GRIDXMAX * GRIDYMAX - 1 - (xybase + wlen[word] * GRIDXMAX - GRIDXMAX);
 			d->symlen = wlen[word];
 		} else
 			d->symdir = 0;
@@ -624,7 +627,7 @@ void scan_grid(struct node *d) {
 		}
 	}
 
-	// locate unaccounted adjecent cells
+	// locate unaccounted adjacent cells
 	if (d->numadj > 0) {
 		xy = d->adjxy[--d->numadj];
 		if (d->adjdir[d->numadj] == 'H') {
@@ -635,7 +638,7 @@ void scan_grid(struct node *d) {
 		} else {
 			for (l = d->adjl[d->numadj]; l; l = ld->next) {
 				ld = &linkdat[l];
-				place_vword(d, xy + ld->ofs * GRIDMAX, ld->w);
+				place_vword(d, xy + ld->ofs * GRIDXMAX, ld->w);
 			}
 		}
 		return;
@@ -646,14 +649,14 @@ void scan_grid(struct node *d) {
 		memcpy(&solution, d, sizeof(struct node));
 
 	// Sweep grid from top-left to bottom-right corner
-	for (level = d->firstlevel; level <= d->lastlevel && level <= GRIDMAX * 2 - 4; level++) {
+	for (level = d->firstlevel; level <= d->lastlevel && level <= GRIDXMAX + GRIDYMAX - 4; level++) {
 
 		if (!opt_symmetrical) {
 			// Locate 'tight' words
 			hasplace = 0;
 			for (xy = level2xy[level], grid = d->grid + xy, attr = d->attr + xy;
 			     !ISBORDER(*attr);
-			     xy += GRIDMAX - 1, grid += GRIDMAX - 1, attr += GRIDMAX - 1) {
+			     xy += GRIDXMAX - 1, grid += GRIDXMAX - 1, attr += GRIDXMAX - 1) {
 				if (*attr & TODOH) {
 					for (l = links1[*grid]; l; l = ld->next) {
 						ld = &linkdat[l];
@@ -665,7 +668,7 @@ void scan_grid(struct node *d) {
 				if (*attr & TODOV) {
 					for (l = links1[*grid]; l; l = ld->next) {
 						ld = &linkdat[l];
-						tstxy = xy + ld->ofs * GRIDMAX;
+						tstxy = xy + ld->ofs * GRIDXMAX;
 						if (xy2level[tstxy] == d->firstlevel)
 							hasplace += place_vword(d, tstxy, ld->w);
 					}
@@ -675,11 +678,11 @@ void scan_grid(struct node *d) {
 			}
 		}
 
-		// Locate 'adjecent' word
+		// Locate 'adjacent' word
 		hasplace = 0;
 		for (xy = level2xy[level], grid = d->grid + xy, attr = d->attr + xy;
 		     !ISBORDER(*attr);
-		     xy += GRIDMAX - 1, grid += GRIDMAX - 1, attr += GRIDMAX - 1) {
+		     xy += GRIDXMAX - 1, grid += GRIDXMAX - 1, attr += GRIDXMAX - 1) {
 			if (*attr & TODOH) {
 				for (l = links1[*grid]; l; l = ld->next) {
 					ld = &linkdat[l];
@@ -687,7 +690,7 @@ void scan_grid(struct node *d) {
 					if (ISSTAR(d->grid[tstxy]))
 						hasplace += place_hword(d, tstxy, ld->w);
 					if (opt_symmetrical) {
-						if (ISSTAR(d->grid[GRIDMAX * GRIDMAX - 1 - (tstxy + wlen[ld->w] - 1)]))
+						if (ISSTAR(d->grid[GRIDXMAX * GRIDYMAX - 1 - (tstxy + wlen[ld->w] - 1)]))
 							hasplace += place_hword(d, tstxy, ld->w);
 					}
 				}
@@ -695,11 +698,11 @@ void scan_grid(struct node *d) {
 			if (*attr & TODOV) {
 				for (l = links1[*grid]; l; l = ld->next) {
 					ld = &linkdat[l];
-					tstxy = xy + ld->ofs * GRIDMAX;
+					tstxy = xy + ld->ofs * GRIDXMAX;
 					if (ISSTAR(d->grid[tstxy]))
 						hasplace += place_vword(d, tstxy, ld->w);
 					if (opt_symmetrical) {
-						if (ISSTAR(d->grid[GRIDMAX * GRIDMAX - 1 - (tstxy + wlen[ld->w] * GRIDMAX - GRIDMAX)]))
+						if (ISSTAR(d->grid[GRIDXMAX * GRIDYMAX - 1 - (tstxy + wlen[ld->w] * GRIDXMAX - GRIDXMAX)]))
 							hasplace += place_vword(d, tstxy, ld->w);
 					}
 				}
@@ -713,7 +716,7 @@ void scan_grid(struct node *d) {
 		hasfree = 0;
 		for (xy = level2xy[level], grid = d->grid + xy, attr = d->attr + xy;
 		     !ISBORDER(*attr);
-		     xy += GRIDMAX - 1, grid += GRIDMAX - 1, attr += GRIDMAX - 1) {
+		     xy += GRIDXMAX - 1, grid += GRIDXMAX - 1, attr += GRIDXMAX - 1) {
 			if (ISFREE(*grid))
 				hasfree = 1;
 			if (*attr & TODOH) {
@@ -734,10 +737,10 @@ void scan_grid(struct node *d) {
 					grid[-1] = STAR;
 					grid[+1] = STAR;
 					if (opt_symmetrical) {
-						if (ISCHAR(d->grid[GRIDMAX * GRIDMAX - 1 - (xy - 1)])) return; // Arghh
-						d->grid[GRIDMAX * GRIDMAX - 1 - (xy - 1)] = STAR;
-						if (ISCHAR(d->grid[GRIDMAX * GRIDMAX - 1 - (xy + 1)])) return; // Arghh
-						d->grid[GRIDMAX * GRIDMAX - 1 - (xy + 1)] = STAR;
+						if (ISCHAR(d->grid[GRIDXMAX * GRIDYMAX - 1 - (xy - 1)])) return; // Arghh
+						d->grid[GRIDXMAX * GRIDYMAX - 1 - (xy - 1)] = STAR;
+						if (ISCHAR(d->grid[GRIDXMAX * GRIDYMAX - 1 - (xy + 1)])) return; // Arghh
+						d->grid[GRIDXMAX * GRIDYMAX - 1 - (xy + 1)] = STAR;
 					}
 				}
 				hasplace += cnt;
@@ -746,7 +749,7 @@ void scan_grid(struct node *d) {
 				cnt = 0;
 				for (l = links1[*grid]; l; l = ld->next) {
 					ld = &linkdat[l];
-					tstxy = xy + ld->ofs * GRIDMAX;
+					tstxy = xy + ld->ofs * GRIDXMAX;
 					if (!ISSTAR(d->grid[tstxy]))
 						cnt += place_vword(d, tstxy, ld->w);
 					if (!opt_symmetrical) {
@@ -757,13 +760,13 @@ void scan_grid(struct node *d) {
 				if (cnt == 0) {
 					// Speed things up (Not 100% correct, but it's fast)
 					*attr &= ~TODOV;
-					grid[-GRIDMAX] = STAR;
-					grid[+GRIDMAX] = STAR;
+					grid[-GRIDXMAX] = STAR;
+					grid[+GRIDXMAX] = STAR;
 					if (opt_symmetrical) {
-						if (ISCHAR(d->grid[GRIDMAX * GRIDMAX - 1 - (xy - GRIDMAX)])) return; // Arghh
-						d->grid[GRIDMAX * GRIDMAX - 1 - (xy - GRIDMAX)] = STAR;
-						if (ISCHAR(d->grid[GRIDMAX * GRIDMAX - 1 - (xy + GRIDMAX)])) return; // Arghh
-						d->grid[GRIDMAX * GRIDMAX - 1 - (xy + GRIDMAX)] = STAR;
+						if (ISCHAR(d->grid[GRIDXMAX * GRIDYMAX - 1 - (xy - GRIDXMAX)])) return; // Arghh
+						d->grid[GRIDXMAX * GRIDYMAX - 1 - (xy - GRIDXMAX)] = STAR;
+						if (ISCHAR(d->grid[GRIDXMAX * GRIDYMAX - 1 - (xy + GRIDXMAX)])) return; // Arghh
+						d->grid[GRIDXMAX * GRIDYMAX - 1 - (xy + GRIDXMAX)] = STAR;
 					}
 				}
 				hasplace += cnt;
@@ -978,29 +981,31 @@ int main(int argc, char **argv) {
 	// init grid administration
 	freenode = NULL;
 
-	// Do some hotspot pre-calculations
-	for (i = GRIDMAX * GRIDMAX - 1; i >= 0; i--)
-		xy2level[i] = (i % GRIDMAX) + (i / GRIDMAX);
-	for (i = 0; i < GRIDMAX * 2; i++) {
-		if (i < GRIDMAX) {
-			level2xy[i] = i + GRIDMAX - 1;
-		} else {
-			level2xy[i] = GRIDMAX * GRIDMAX - (GRIDMAX * 2 - 3 - i) * GRIDMAX - 2;
+	// create an initial grid
+	d = (struct node *) calloc(1, sizeof(struct node));
+	for (y = GRIDYMAX - 1; y >= 0; y--) {
+		for (x = GRIDXMAX - 1; x >= 0; x--) {
+			d->grid[x + y * GRIDXMAX] = STAR;
+			d->attr[x + y * GRIDXMAX] = BORDER;
+		}
+	}
+	for (y = GRIDYMAX - 2; y > 0; y--) {
+		for (x = GRIDXMAX - 2; x > 0; x--) {
+			d->grid[x + y * GRIDXMAX] = FREE;
+			d->attr[x + y * GRIDXMAX] = 0;
 		}
 	}
 
-	// create an initial grid
-	d = (struct node *) calloc(1, sizeof(struct node));
-	for (y = GRIDMAX - 1; y >= 0; y--)
-		for (x = GRIDMAX - 1; x >= 0; x--) {
-			d->grid[x + y * GRIDMAX] = STAR;
-			d->attr[x + y * GRIDMAX] = BORDER;
-		}
-	for (y = GRIDMAX - 2; y > 0; y--)
-		for (x = GRIDMAX - 2; x > 0; x--) {
-			d->grid[x + y * GRIDMAX] = FREE;
-			d->attr[x + y * GRIDMAX] = 0;
-		}
+	// Do some hotspot pre-calculations to fast skip empty grid areas
+	// with rectangular grids it's easier to track the start of scan diagonals instead of calfculating them
+	for (i = 0; i < GRIDXMAX * GRIDYMAX; i++) {
+		int lvl = (i % GRIDXMAX) + (i / GRIDXMAX);
+		// xy -> level
+		xy2level[i] = lvl;
+		// level -> xy
+		if (!ISBORDER(d->attr[i]) && !level2xy[lvl])
+			level2xy[lvl] = i;
+	}
 
 	// Place all the words for starters
 	if (opt_symmetrical) {
@@ -1008,13 +1013,13 @@ int main(int argc, char **argv) {
 		for (w = numword - 1; w >= 0; w--)
 			if (wlen[w] >= 5) {
 				d->hash = 0;
-				place_hword(d, (GRIDMAX / 2 + 2 - wlen[w]) + (GRIDMAX / 2) * GRIDMAX, w);
+				place_hword(d, (GRIDXMAX / 2 + 2 - wlen[w]) + (GRIDYMAX / 2) * GRIDXMAX, w);
 			}
 	} else {
 		// work from top-left to bottom-right
 		for (w = numword - 1; w >= 0; w--) {
 			d->firstlevel = 2;
-			place_hword(d, 0 + 1 * GRIDMAX, w);
+			place_hword(d, 0 + 1 * GRIDXMAX, w);
 		}
 	}
 
