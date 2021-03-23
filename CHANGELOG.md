@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+```
+2021-03-23 17:31:07 Changed: Order items in navbar.
+```
+
 ## 2021-03-20 20:34:05 [Version 1.2.0]
 
 ```

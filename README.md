@@ -4,11 +4,11 @@ title: "jigsaw - Create crossword puzzles (Winner of the 1996 spring POTM, Crozz
 image: assets/favimage-840x472.jpg
 ---
 
-![preview](assets/favimage-840x472.jpg)
+![teaser](assets/favimage-840x472.jpg)
 
 # jigsaw
 
-Create crossword puzzles (Winner of the 1996 spring POTM, Crozzle).
+Create crossword puzzles (Winner of the 1996 spring POTM, Crozzle)
 
 ### Welcome to the Wonderful World of width-first tree searches
 
@@ -71,7 +71,7 @@ The project teaser was created af ter applying the following patch:
 The following command takes about 45 minutes to complete:
 
 ```sh
-        ./jigsaw <jigsaw.list -d -D -t 9999 -n 100000 -s
+  ./jigsaw <jigsaw.list -d -D -t 9999 -n 100000 -s
 ```
 
 ## Known bugs
